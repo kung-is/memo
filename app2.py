@@ -559,6 +559,7 @@ def main_page():
 
 # --- 참가자 뷰 ---
 def challenge_participant_view(selected_member):
+    # 현재 날짜를 정확히 가져옵니다.
     today = date.today()
     
     st.markdown(f'<div class="gmarket-font" style="background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">', unsafe_allow_html=True)
@@ -622,7 +623,8 @@ def challenge_participant_view(selected_member):
     # 글쓰기 영역
     st.markdown("---")
     st.markdown(f"### <span style='color:{PRIMARY_COLOR};'>✏️ 새 기록 작성하기</span>", unsafe_allow_html=True)
-    selected_date = st.date_input("글을 작성할 날짜를 선택하세요", value=today, max_value=today)
+    # 🌟 수정 포인트: date.today()로 max_value를 명확히 지정하여 오늘 날짜가 막히는 문제를 해결합니다.
+    selected_date = st.date_input("글을 작성할 날짜를 선택하세요", value=date.today(), max_value=date.today())
     
     st.info(f"선택 날짜: {selected_date.strftime('%Y년 %m월 %d일')}\n\n⚠️ 글을 저장할 때마다 새로운 행에 기록이 추가되며, 챌린지 달성 현황은 일일 1일만 카운트 됩니다. 글 저장 버튼을 꼭 눌러주세요!")
     
