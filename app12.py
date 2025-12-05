@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
+import pytz
+from streamlit_autorefresh import st_autorefresh
 import gspread
 import time
 import streamlit.components.v1 as components
@@ -715,8 +717,21 @@ def main_page():
 
 # --- 참가자 뷰 ---
 def challenge_participant_view(selected_member):
-    # 현재 날짜를 정확히 가져옵니다.
-    today = date.today()
+    # 한국 시간으로 현재 날짜 가져오기
+    kst = pytz.timezone('Asia/Seoul')
+    today = datetime.now(kst).date()
+    
+    # 캐싱 방지를 위해 날짜가 바뀌면 key 변경
+    if 'current_date' not in st.session_state:
+        st.session_state.current_date = today_kst
+    
+    # 날짜가 바뀌었으면 세션 리셋
+    if st.session_state.current_date != today_kst:
+        st.session_state.current_date = today_kst
+        # 모든 관련 세션 상태 초기화
+        for key in list(st.session_state.keys()):
+            if 'date_input' in key:
+                del st.session_state[key]
     
     col_header, col_home_btn = st.columns([8, 2])
     with col_header:
@@ -819,7 +834,14 @@ def challenge_participant_view(selected_member):
     with st.container():
         st.markdown(f"### <span style='color:{PRIMARY_COLOR};'>✏️ 오늘의 기록 남기기</span>", unsafe_allow_html=True)
         
-        selected_date = st.date_input("글을 작성할 날짜를 선택하세요", value=date.today(), max_value=date.today())
+        # 날짜별로 고유한 키 사용 (캐싱 방지)
+        selected_date = st.date_input(
+            "글을 작성할 날짜를 선택하세요", 
+            value=today, 
+            max_value=today,
+            min_value=date(2024, 12, 3),  # 챌린지 시작일
+            key=f"date_input_{today.strftime('%Y%m%d')}"
+        )
         
         st.info(f"선택 날짜: {selected_date.strftime('%Y년 %m월 %d일')}\n\n⚠️ 글을 저장할 때마다 새로운 행에 기록이 추가되며, 챌린지 달성 현황은 일일 1일만 카운트 됩니다. 글 저장 버튼을 꼭 눌러주세요!")
         
@@ -972,6 +994,35 @@ if 'modal_date' not in st.session_state:
 if 'modal_motivation' not in st.session_state:
     st.session_state['modal_motivation'] = ''
 
+# ===== 자동 리프레시 및 한국 시간 설정 =====
+# 한국 시간 가져오기
+kst = pytz.timezone('Asia/Seoul')
+now_kst = datetime.now(kst)
+today_kst = now_kst.date()
+
+# 세션 상태에 현재 날짜 저장 (날짜 변경 감지용)
+if 'last_known_date' not in st.session_state:
+    st.session_state.last_known_date = today_kst
+
+# 날짜가 바뀌었으면 세션 초기화
+if st.session_state.last_known_date != today_kst:
+    st.session_state.last_known_date = today_kst
+    # date_input 관련 키 초기화
+    keys_to_delete = [key for key in st.session_state.keys() if 'date_input' in key]
+    for key in keys_to_delete:
+        del st.session_state[key]
+    st.rerun()
+
+# 자정 근처(23:58 ~ 00:02)에는 10초마다 자동 리프레시
+if (now_kst.hour == 23 and now_kst.minute >= 58) or (now_kst.hour == 0 and now_kst.minute <= 2):
+    st_autorefresh(interval=10000, key="midnight_refresh")
+
+# ===== 기존 코드 =====
+# 세션 상태 초기화
+if 'view' not in st.session_state:
+    st.session_state.view = 'home'
+
+# 뷰에 따라 페이지 렌더링
 
 if st.session_state.view == 'home':
     main_page()
