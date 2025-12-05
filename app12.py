@@ -786,17 +786,29 @@ def challenge_participant_view(selected_member):
         for status in weekly_status:
             week_label = f"[{status['name']}] {status['start'].strftime('%m/%d')} ~ {status['end'].strftime('%m/%d')}"
             
+            # 챌린지 주차는 PRIMARY_COLOR를 사용하는 박스 서식으로 통일
             if status['is_challenge']:
-                # 챌린지 주차는 역동적인 프로그레스 바 사용
                 is_current = status['is_current']
                 if status['start'] > today:
                     week_label += " (예정)"
+                    color = "#C0C0C0" # 예정
+                    bg_color = "#f7f7f7"
                 elif is_current:
                     week_label = f"**{week_label} (현재 주차)**"
-                
-                render_gradient_bar(week_label, status['written'], status['goal'], is_current=is_current)
+                    color = ACCENT_COLOR # 현재 주차
+                    bg_color = "#ebf9ff"
+                else:
+                    color = PRIMARY_COLOR # 완료/진행 주차
+                    bg_color = "#fff0eb"
+
+                st.markdown(f'''
+                    <div style="font-weight: 700; color: {TEXT_DARK}; margin: 10px 0 15px 0; padding: 10px; border-left: 5px solid {color}; background-color: {bg_color}; border-radius: 6px; box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);">
+                        {week_label}: 기록 {status['written']}일 / 목표 {status['goal']}일 ({status['rate']:.1f}%)
+                    </div>
+                ''', unsafe_allow_html=True)
+
+            # 보너스 주차는 그대로 유지 (ACCENT_COLOR 박스)
             else:
-                # 보너스 주차는 단순 정보 블록으로 처리
                 st.markdown(f'''
                     <div style="font-weight: 500; color: {TEXT_DARK}; margin: 10px 0 15px 0; padding: 10px; border-left: 5px solid {ACCENT_COLOR}; background-color: #f7f7f7; border-radius: 6px; box-shadow: inset 0 0 5px rgba(58, 187, 248, 0.1);">
                         {week_label}: 기록 {status['written']}일 (챌린지 적응 기록)
