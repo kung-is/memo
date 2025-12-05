@@ -1,3 +1,6 @@
 streamlit
 pandas
 gspread
+streamlit-autorefresh
+pytz
+datetime
